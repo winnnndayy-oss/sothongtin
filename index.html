@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sổ thông tin</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+:root{color-scheme:light;--bg:#F1F3F8;--sf:#FFFFFF;--ink:#1B2236;--mut:#5C6680;--line:#DCE1EC;--ac:#3D4FD6;--acf:#FFFFFF;--dn:#B42318;--avl:32%;--avfg:#FFFFFF;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#12151F;--sf:#1B2030;--ink:#E8ECF8;--mut:#9AA4C0;--line:#2C3350;--ac:#8E9BFF;--acf:#12151F;--dn:#FF8A80;--avl:72%;--avfg:#12151F}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#12151F;--sf:#1B2030;--ink:#E8ECF8;--mut:#9AA4C0;--line:#2C3350;--ac:#8E9BFF;--acf:#12151F;--dn:#FF8A80;--avl:72%;--avfg:#12151F}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+main{max-width:560px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+h1{font-size:1.6rem;margin:0;letter-spacing:-.01em}
+h2{margin:0}
+#count{color:var(--mut)}
+#status{color:var(--mut);font-size:.9rem;min-height:1.4em;margin:6px 0 0}
+.bar{display:flex;gap:8px;margin:12px 0 16px}
+.bar input{flex:1;min-width:0}
+input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+.bar input{background:var(--sf)}
+button{font:inherit;min-height:44px;border-radius:10px;border:1px solid transparent;padding:0 16px;cursor:pointer;white-space:nowrap}
+input:focus-visible,button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.pri{background:var(--ac);color:var(--acf);font-weight:600}
+.pri:disabled{opacity:.5;cursor:default}
+.ghost{background:none;border-color:var(--line);color:var(--ink);min-height:36px;padding:0 12px}
+.danger{color:var(--dn)}
+#panel{background:var(--sf);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+label{display:block;font-weight:600;font-size:.9rem;margin:12px 0 4px}
+#err{color:var(--dn);min-height:1.2em;margin:10px 0 0}
+.fbtn{display:flex;gap:8px;margin-top:8px}
+.card{position:relative;display:grid;grid-template-columns:auto 40px 1fr auto;gap:2px 8px;background:var(--sf);border:3px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:8px;align-items:center}
+.stt{font-weight:700;color:var(--ac);font-size:1rem;min-width:1.8ch;text-align:right;padding-right:2px}
+.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:1rem;background:hsl(var(--h) 50% var(--avl));color:var(--avfg);background-size:cover;background-position:center}
+.name{font-size:1rem;margin:0;overflow-wrap:anywhere;line-height:1.3}
+.dob{color:var(--mut);font-size:.85rem;margin:0;line-height:1.2}
+.expand{background:none;border:none;color:var(--ac);font-size:1.4rem;font-weight:700;width:36px;height:36px;display:grid;place-items:center;cursor:pointer;border-radius:50%;min-height:36px;padding:0}
+.expand:hover{background:var(--line)}
+.details{grid-column:1/-1;margin-top:6px;padding-top:6px;border-top:1px solid var(--line);display:none}
+.details.open{display:block}
+.row{margin:3px 0;display:flex;gap:8px}
+.k{color:var(--mut);flex:0 0 84px}
+.v{overflow-wrap:anywhere;min-width:0}
+.act{display:flex;gap:8px;margin-top:8px}
+.color-wrap{display:flex;align-items:center;gap:12px;margin-top:4px}
+.color-preview{width:52px;height:52px;border-radius:12px;border:3px solid var(--line);flex-shrink:0;cursor:pointer;background:transparent;position:relative}
+.color-preview::after{content:'';position:absolute;inset:4px;border-radius:8px;background:currentColor;opacity:.9}
+input[type=color]{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+#photo-preview{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--line);margin-top:6px;display:none}
+#map-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;flex-direction:column;padding:12px}
+#map-modal.open{display:flex}
+#map{flex:1;border-radius:12px;min-height:60vh}
+.map-bar{display:flex;gap:8px;margin-top:8px}
+.map-bar button{flex:1}
+</style>
+</head>
+<body>
+<main>
+<header><h1>Sổ thông tin</h1><span id="count"></span></header>
+<p id="status" aria-live="polite">Đang tải…</p>
+<div class="bar">
+<input id="q" type="search" placeholder="Tìm theo tên, số, Gmail…" aria-label="Tìm kiếm">
+<button id="add" class="pri" disabled>Thêm người</button>
+</div>
+<section id="panel" hidden>
+<h2 id="ttl">Thêm người</h2>
+<label for="f-stt">Số thứ tự</label>
+<input id="f-stt" type="number" min="1" step="1" placeholder="Tự động">
+<label for="f-color">Màu thanh thông tin</label>
+<div class="color-wrap">
+  <div class="color-preview" id="color-preview"></div>
+  <input id="f-color" type="color" value="#3D4FD6">
+</div>
+<label for="f-photo">Ảnh avatar</label>
+<button type="button" id="pick-photo" class="ghost" style="width:100%">Chọn ảnh từ thư viện điện thoại</button>
+<input id="f-photo" type="file" accept="image/*" hidden>
+<img id="photo-preview" alt="Xem trước avatar">
+<label for="f-name">Họ tên</label>
+<input id="f-name" autocomplete="off">
+<label for="f-dob">Ngày sinh</label>
+<input id="f-dob" type="date">
+<label for="f-phone">Số điện thoại</label>
+<input id="f-phone" type="tel" inputmode="tel" autocomplete="off" placeholder="0912 345 678">
+<label for="f-email">Gmail</label>
+<input id="f-email" type="email" autocomplete="off" placeholder="ten@gmail.com">
+<label for="f-hobby">Sở thích</label>
+<input id="f-hobby" autocomplete="off" placeholder="Đọc sách, bóng đá, nấu ăn…">
+<label for="f-address">Địa chỉ</label>
+<input id="f-address" autocomplete="off" placeholder="Nhập địa chỉ">
+<button type="button" id="pick-map" class="ghost" style="width:100%;margin-top:4px">Chọn vị trí trên bản đồ vệ tinh</button>
+<label style="margin-top:8px">Gắn tọa độ</label>
+<div style="display:flex;gap:8px">
+  <input id="f-lat" type="number" step="any" placeholder="Vĩ độ" style="flex:1">
+  <input id="f-lng" type="number" step="any" placeholder="Kinh độ" style="flex:1">
+</div>
+<p id="err" role="alert"></p>
+<div class="fbtn"><button id="save" class="pri">Lưu</button><button id="cancel" class="ghost">Hủy</button></div>
+</section>
+<div id="map-modal">
+  <div id="map"></div>
+  <div class="map-bar">
+    <button type="button" id="map-cancel" class="ghost">Hủy</button>
+    <button type="button" id="map-ok" class="pri">Chọn vị trí này</button>
+  </div>
+</div>
+<div id="list"></div>
+</main>
+<script>
+(function(){
+var $=function(s){return document.querySelector(s)};
+var KEY='so-thong-tin-v1';
+var items=[],ref=null,ready=false,editId=null,q='',armed=null,note='',st,armT;
+
+function h(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function fmt(d){var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d||'');return m?m[3]+'/'+m[2]+'/'+m[1]:''}
+function hue(s){var x=0;for(var c of s)x=(x*31+c.codePointAt(0))%360;return x}
+function initial(n){var w=n.trim().normalize('NFC').split(/\s+/);return (Array.from(w[w.length-1]||'?')[0]).toUpperCase()}
+function say(t,ms){var el=$('#status');el.textContent=t;clearTimeout(st);if(ms)st=setTimeout(function(){el.textContent=note},ms)}
+
+async function persist(){
+  try{
+    if(ref){await ref.set({items:items})}
+    else{localStorage.setItem(KEY,JSON.stringify(items))}
+    say('Đã lưu',1800);
+  }catch(e){say('Không lưu được. Hãy thử lại sau.')}
+}
+
+function card(p){
+  var c=h('article','card');
+  if(p.color){
+    c.style.borderColor=p.color;
+  }
+  var sttEl=h('div','stt',p.stt!=null?p.stt:'');
+  var av=h('div','av');
+  if(p.photo){
+    av.style.backgroundImage='url('+p.photo+')';
+    av.textContent='';
+  }else{
+    var avText=initial(p.name);
+    av.textContent=avText;
+    av.style.setProperty('--h',hue(p.name));
+  }
+  var main=h('div','main');
+  main.append(h('h2','name',p.name));
+  if(p.dob) main.append(h('p','dob',fmt(p.dob)));
+  var plus=h('button','expand','+');
+  plus.setAttribute('aria-label','Xem thêm thông tin');
+  var details=h('div','details');
+  var addrText=p.address||'';
+  var rowsData=[['Điện thoại',p.phone],['Gmail',p.email],['Sở thích',p.hobby],['Địa chỉ',addrText]];
+  rowsData.forEach(function(r){
+    if(!r[1])return;
+    var row=h('p','row');row.append(h('span','k',r[0]),h('span','v',r[1]));details.append(row);
+  });
+  if(p.lat&&p.lng){
+    var mapRow=h('div','row');
+    var mapBtn=h('button','ghost','Xem vị trí');
+    mapBtn.style.flex=1;
+    mapBtn.onclick=function(){
+      var url='https://www.google.com/maps?q='+p.lat+','+p.lng+'&z=18&t=k';
+      window.open(url,'_blank');
+    };
+    mapRow.append(h('span','k','Vị trí'),mapBtn);
+    details.append(mapRow);
+  }
+  var act=h('div','act');
+  var e=h('button','ghost','Sửa');e.onclick=function(){openForm(p)};
+  var d=h('button','ghost danger',armed===p.id?'Bấm lại để xóa':'Xóa');d.onclick=function(){del(p.id)};
+  act.append(e,d);details.append(act);
+  plus.onclick=function(){
+    var open=details.classList.toggle('open');
+    plus.textContent=open?'−':'+';
+    plus.setAttribute('aria-expanded',open?'true':'false');
+  };
+  c.append(sttEl,av,main,plus,details);
+  return c;
+}
+
+function nextStt(){
+  var max=0;
+  items.forEach(function(p){if(p.stt!=null&&p.stt>max)max=p.stt});
+  return max+1;
+}
+
+function render(){
+  var list=$('#list');list.textContent='';
+  $('#add').disabled=!ready;
+  $('#count').textContent=items.length?items.length+' người':'';
+  var k=q.trim().toLowerCase();
+  var rows=items.filter(function(p){return !k||[p.name,p.phone,p.email,p.hobby,p.address,fmt(p.dob),p.stt].join(' ').toLowerCase().includes(k)});
+  if(!rows.length){
+    list.append(h('p','empty',items.length?'Không tìm thấy kết quả.':ready?'Chưa có ai. Bấm “Thêm người” để lưu thông tin đầu tiên.':''));
+    return;
+  }
+  rows.sort(function(a,b){
+    var sa=a.stt!=null?a.stt:1e9, sb=b.stt!=null?b.stt:1e9;
+    if(sa!==sb)return sa-sb;
+    return a.name.localeCompare(b.name,'vi');
+  });
+  rows.forEach(function(p){list.append(card(p))});
+}
+
+function openForm(p){
+  editId=p?p.id:null;
+  $('#f-stt').value=p&&p.stt!=null?p.stt:(editId? '': nextStt());
+  $('#f-color').value=p&&p.color?p.color:'#3D4FD6';
+  $('#f-photo').value='';
+  if(p&&p.photo){
+    $('#photo-preview').src=p.photo;
+    $('#photo-preview').style.display='block';
+  }else{
+    $('#photo-preview').style.display='none';
+  }
+  updateColorPreview();
+  $('#f-name').value=p?p.name:'';
+  $('#f-dob').value=p&&p.dob?p.dob:'';
+  $('#f-phone').value=p&&p.phone?p.phone:'';
+  $('#f-email').value=p&&p.email?p.email:'';
+  $('#f-hobby').value=p&&p.hobby?p.hobby:'';
+  $('#f-address').value=p&&p.address?p.address:'';
+  $('#f-lat').value=p&&p.lat!=null?p.lat:'';
+  $('#f-lng').value=p&&p.lng!=null?p.lng:'';
+  $('#ttl').textContent=p?'Sửa thông tin':'Thêm người';
+  $('#save').textContent=p?'Lưu thay đổi':'Lưu';
+  $('#err').textContent='';
+  $('#panel').hidden=false;
+  $('#f-name').focus();
+  $('#panel').scrollIntoView({block:'nearest'});
+}
+function closeForm(){$('#panel').hidden=true;editId=null}
+function err(t){$('#err').textContent=t}
+
+function submit(){
+  if(!ready)return;
+  var v=function(s){return $(s).value.trim()};
+  var sttRaw=$('#f-stt').value.trim();
+  var stt=sttRaw?parseInt(sttRaw,10):null;
+  if(sttRaw&&(isNaN(stt)||stt<1)){err('Số thứ tự phải là số nguyên dương.');return}
+  var color=$('#f-color').value||undefined;
+  var file=$('#f-photo').files[0];
+  function doSave(photo){
+    var p={id:editId||uid(),stt:stt,color:color,photo:photo,name:v('#f-name'),dob:$('#f-dob').value,phone:v('#f-phone'),email:v('#f-email'),hobby:v('#f-hobby'),address:v('#f-address'),lat:$('#f-lat').value?parseFloat($('#f-lat').value):null,lng:$('#f-lng').value?parseFloat($('#f-lng').value):null};
+    if(!p.name){err('Nhập họ tên để lưu.');return}
+    if(p.phone&&!/^[0-9+()\-.\s]{6,20}$/.test(p.phone)){err('Số điện thoại chưa đúng, ví dụ 0912 345 678.');return}
+    if(p.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email)){err('Gmail chưa đúng, ví dụ ten@gmail.com.');return}
+    if(!photo && editId){
+      var old=items.find(function(x){return x.id===editId});
+      if(old&&old.photo)p.photo=old.photo;
+    }
+    items=editId?items.map(function(x){return x.id===editId?p:x}):items.concat([p]);
+    persist();closeForm();render();
+  }
+  if(file){
+    var reader=new FileReader();
+    reader.onload=function(){doSave(reader.result)};
+    reader.onerror=function(){err('Không đọc được ảnh. Hãy thử ảnh khác.');};
+    reader.readAsDataURL(file);
+  }else{
+    doSave(null);
+  }
+}
+
+function del(id){
+  if(armed!==id){armed=id;clearTimeout(armT);armT=setTimeout(function(){armed=null;render()},3000);render();return}
+  armed=null;items=items.filter(function(p){return p.id!==id});
+  if(editId===id)closeForm();
+  persist();render();
+}
+
+$('#add').onclick=function(){openForm(null)};
+$('#save').onclick=submit;
+$('#cancel').onclick=closeForm;
+$('#q').oninput=function(e){q=e.target.value;render()};
+$('#panel').onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();submit()}};
+$('#f-dob').max=new Date().toISOString().slice(0,10);
+
+async function init(){
+  var failed=false,slow=setTimeout(function(){if(!ready)say('Đang chờ dữ liệu, vui lòng đợi thêm…')},10000);
+  try{
+    var c=window.claude;
+    var r=await Promise.all([c.use('user'),c.use('db')]);
+    var id=r[0]?await r[0].id():null;
+    if(r[1]&&id)ref=r[1].collection('data/users/'+id).doc('contacts');
+  }catch(e){ref=null}
+  try{
+    if(ref){var s=await ref.get();if(s.exists)items=(s.data().items)||[]}
+    else{
+      note='Chưa kết nối được kho lưu trữ, nên dữ liệu chỉ lưu trên trình duyệt này.';
+      var raw=localStorage.getItem(KEY);if(raw)items=JSON.parse(raw)||[];
+    }
+  }catch(e){if(ref)failed=true}
+  clearTimeout(slow);
+  if(failed){say('Không tải được dữ liệu đã lưu. Hãy mở lại trang.');render();return}
+  ready=true;
+  // Gán số thứ tự mặc định cho dữ liệu cũ nếu chưa có (tránh trùng)
+  var used={}, max=0, need=false;
+  items.forEach(function(p){if(p.stt!=null&&p.stt>0){used[p.stt]=1;if(p.stt>max)max=p.stt}});
+  var n=1;
+  items.forEach(function(p){
+    if(p.stt==null||p.stt<1){
+      while(used[n])n++;
+      p.stt=n;used[n]=1;if(n>max)max=n;need=true;n++;
+    }
+  });
+  if(need)persist();
+  say(note);render();
+}
+
+var map, marker, mapReady=false;
+function openMap(){
+  var modal=$('#map-modal');
+  modal.classList.add('open');
+  if(!map){
+    map=L.map('map').setView([16.4637,107.5909],13); // mặc định Huế
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{
+      attribution:'Tiles © Esri',maxZoom:19
+    }).addTo(map);
+    map.on('click',function(e){
+      if(marker)map.removeLayer(marker);
+      marker=L.marker(e.latlng).addTo(map);
+    });
+    mapReady=true;
+  }
+  setTimeout(function(){map.invalidateSize()},100);
+  // Ưu tiên vị trí hiện tại của người dùng
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var ll=[pos.coords.latitude,pos.coords.longitude];
+      map.setView(ll,16);
+      if(marker)map.removeLayer(marker);
+      marker=L.marker(ll).addTo(map);
+    },function(){
+      // fallback nếu không lấy được vị trí
+      var lat=parseFloat($('#f-lat').value),lng=parseFloat($('#f-lng').value);
+      if(!isNaN(lat)&&!isNaN(lng)){
+        map.setView([lat,lng],16);
+        if(marker)map.removeLayer(marker);
+        marker=L.marker([lat,lng]).addTo(map);
+      }
+    },{enableHighAccuracy:true,timeout:8000});
+  }else{
+    var lat=parseFloat($('#f-lat').value),lng=parseFloat($('#f-lng').value);
+    if(!isNaN(lat)&&!isNaN(lng)){
+      map.setView([lat,lng],16);
+      if(marker)map.removeLayer(marker);
+      marker=L.marker([lat,lng]).addTo(map);
+    }
+  }
+}
+$('#pick-map').onclick=openMap;
+$('#map-cancel').onclick=function(){$('#map-modal').classList.remove('open')};
+$('#map-ok').onclick=function(){
+  if(marker){
+    var ll=marker.getLatLng();
+    $('#f-lat').value=ll.lat.toFixed(6);
+    $('#f-lng').value=ll.lng.toFixed(6);
+  }
+  $('#map-modal').classList.remove('open');
+};
+
+// Chọn ảnh đẹp hơn
+$('#pick-photo').onclick=function(){$('#f-photo').click()};
+$('#f-photo').onchange=function(){
+  var file=this.files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    $('#photo-preview').src=reader.result;
+    $('#photo-preview').style.display='block';
+  };
+  reader.readAsDataURL(file);
+};
+// Cập nhật xem trước màu
+function updateColorPreview(){
+  var c=$('#f-color').value;
+  $('#color-preview').style.color=c;
+  $('#color-preview').onclick=function(){$('#f-color').click()};
+}
+$('#f-color').oninput=updateColorPreview;
+updateColorPreview();
+
+render();
+init();
+})();
+</script>
+</body>
+</html>
